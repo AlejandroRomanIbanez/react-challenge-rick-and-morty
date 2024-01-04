@@ -2,72 +2,67 @@ import "./App.css";
 import React, { useState, useEffect } from "react";
 import { characters as charactersRaw } from "./data/characters";
 import { Tooltip } from "react-tooltip";
+import Card from "./components/Card"
 
 function App() {
   const [characters, setCharacters] = useState(charactersRaw);
+  const [filteredCharacters, setFilteredCharacters] = useState(charactersRaw);
+  const [searchValue, setSearchValue] = useState("");
+  const [favorites, setFavorites] = useState([]);
+  const [searchBy, setSearchBy] = useState("all");
+  console.log("mainFavorites: ", favorites)
+
+  const filterCharacters = (character) => {
+    switch(searchBy) {
+      case "name":
+        return character.full_name.toLowerCase().includes(searchValue.toLowerCase());
+      case "superpower":
+        return character.super_powers.some(power => power.name.toLowerCase().includes(searchValue.toLowerCase()));
+      case "weakness":
+        return character.weaknesses.some(weakness => weakness.name.toLowerCase().includes(searchValue.toLowerCase()));
+      default:
+        return character.full_name.toLowerCase().includes(searchValue.toLowerCase()) ||
+          character.super_powers.some(power => power.name.toLowerCase().includes(searchValue.toLowerCase())) ||
+          character.weaknesses.some(weakness => weakness.name.toLowerCase().includes(searchValue.toLowerCase()));
+    }
+  }
+
+  const removeCharacter = (characterToRemove) => {
+    setCharacters(characters.filter(character => character !== characterToRemove));
+  }
+
+  const toggleFavorite = (character) => {
+    if (favorites.includes(character)) {
+      setFavorites(favorites.filter(favorite => favorite !== character));
+    } else {
+      setFavorites([...favorites, character]);
+    }
+  }
+
+  useEffect(() => {
+    setFilteredCharacters(
+      characters
+        .filter(filterCharacters)
+        .sort((a, b) => (favorites.includes(b) - favorites.includes(a)))
+    );
+  }, [searchValue, searchBy, characters, favorites]);
 
   return (
     <div className='App'>
       <nav>
-        <input />
+        <input onChange={(event) => setSearchValue(event.target.value.trim())}/>
+        <select onChange={(event) => setSearchBy(event.target.value)}>
+          <option value="all">Select...</option>
+          <option value="name">Name</option>
+          <option value="superpower">Superpower</option>
+          <option value="weakness">Weakness</option>
+        </select>
         <button>Search</button>
       </nav>
       <section className='main'>
-        <div className='card'>
-          <div className='image-container'>
-            <img src='images/Rick Sanchez.jpeg' className='cardImage' alt='' />
-            <button className='icon-button'>
-              <img src='/icons/heart-empty.png' alt='heart-empty' />
-            </button>
-            {/* <button className='icon-button'>
-              <img src='/icons/heart-fill.png' alt='heart-fill' />
-            </button> */}
-          </div>
-          <div className='card-body'>
-            <h2>Rick Sanchez</h2>
-
-            <h3>Superpowers</h3>
-            <div className='power-container'>
-              <span data-tooltip-id='genius-level-intellect'>🧠</span>
-              <Tooltip
-                id='genius-level-intellect'
-                place='bottom'
-                content='Genius-level intellect'
-              />
-              <span data-tooltip-id='interdimensional-travel'>🌀</span>
-              <Tooltip
-                id='interdimensional-travel'
-                place='bottom'
-                content='Interdimensional travel'
-              />
-              <span data-tooltip-id='time-manipulation'>⏰</span>
-              <Tooltip
-                id='time-manipulation'
-                place='bottom'
-                content='Time manipulation'
-                s
-              />
-            </div>
-            <h3>Weaknesses</h3>
-            <div className='power-container'>
-              <span data-tooltip-id='alchohol-dependency'>🍾</span>
-              <Tooltip
-                id='alchohol-dependency'
-                place='bottom'
-                content='Alchohol dependency'
-              />
-              <span data-tooltip-id='emotional-detachment'>❤️‍🩹</span>
-              <Tooltip
-                id='emotional-detachment'
-                place='bottom'
-                content='Emotional detachment'
-              />
-            </div>
-          </div>
-          <div className='button-container'>
-            <button className='secondary-button'>Remove</button>
-          </div>
-        </div>
+        {filteredCharacters.map((character, index) => (
+          <Card key={index} character={character} onRemove={() => removeCharacter(character)} onToggleFavorite={() => toggleFavorite(character)} favorites={favorites}/>
+        ))}
       </section>
     </div>
   );
